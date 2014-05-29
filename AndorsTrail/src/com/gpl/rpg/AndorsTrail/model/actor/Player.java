@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 
 import android.util.FloatMath;
-import android.util.Log;
 import android.util.SparseIntArray;
 
 import com.gpl.rpg.AndorsTrail.AndorsTrailApplication;
@@ -26,8 +25,6 @@ import com.gpl.rpg.AndorsTrail.savegames.LegacySavegameFormatReaderForPlayer;
 import com.gpl.rpg.AndorsTrail.util.Coord;
 import com.gpl.rpg.AndorsTrail.util.Range;
 import com.gpl.rpg.AndorsTrail.util.Size;
-import com.twinsprite.TwinspriteException;
-import com.twinsprite.entity.Toyx;
 
 public final class Player extends Actor {
 
@@ -41,16 +38,16 @@ public final class Player extends Actor {
 	public final Range levelExperience; // ranges from 0 to the delta-amount of
 										// exp required for next level
 	public final Inventory inventory;
-	private final SparseIntArray skillLevels = new SparseIntArray();
+	public SparseIntArray skillLevels = new SparseIntArray();
 	public int availableSkillIncreases = 0;
 	public int useItemCost;
 	public int reequipCost;
 	public int totalExperience;
 
-	private final HashMap<String, HashSet<Integer>> questProgress = new HashMap<String, HashSet<Integer>>();
-	private String spawnMap;
-	private String spawnPlace;
-	private final HashMap<String, Integer> alignments = new HashMap<String, Integer>();
+	public HashMap<String, HashSet<Integer>> questProgress = new HashMap<String, HashSet<Integer>>();
+	public String spawnMap;
+	public String spawnPlace;
+	public HashMap<String, Integer> alignments = new HashMap<String, Integer>();
 
 	// Unequipped stats
 	public static final class PlayerBaseTraits {
@@ -93,97 +90,6 @@ public final class Player extends Actor {
 		this.nextPosition = new Coord();
 		this.levelExperience = new Range();
 		this.inventory = new Inventory();
-	}
-
-	public void loadToyxData(Toyx toyx) {
-		try {
-			// TODO iconID
-			baseTraits.maxAP = toyx.getInt("baseTraits:maxAP");
-			baseTraits.maxHP = toyx.getInt("baseTraits:maxHP");
-			baseTraits.moveCost = toyx.getInt("baseTraits:moveCost");
-			baseTraits.attackCost = toyx.getInt("baseTraits:attackCost");
-			baseTraits.attackChance = toyx.getInt("baseTraits:attackChance");
-			baseTraits.criticalSkill = toyx.getInt("baseTraits:criticalSkill");
-			baseTraits.criticalMultiplier = Float.valueOf(toyx.getString("baseTraits:criticalMultiplier"));
-			baseTraits.damagePotential.set(toyx.getInt("baseTraits:damagePotential:max"),
-					toyx.getInt("baseTraits:damagePotential:current"));
-			baseTraits.blockChance = toyx.getInt("baseTraits:blockChance");
-			baseTraits.damageResistance = toyx.getInt("baseTraits:damageResistance");
-			baseTraits.useItemCost = toyx.getInt("baseTraits:useItemCost");
-			baseTraits.reequipCost = toyx.getInt("baseTraits:reequipCost");
-			
-			this.name = toyx.getString("name");
-			this.level = toyx.getInt("level");
-			this.totalExperience = toyx.getInt("totalExperience");
-			
-			this.moveCost = toyx.getInt("moveCost");
-			this.attackCost = toyx.getInt("attackCost");
-			this.attackChance = toyx.getInt("attackChance");
-			this.criticalSkill = toyx.getInt("criticalSkill");
-			this.criticalMultiplier = Float.valueOf(toyx.getString("criticalMultiplier"));
-			this.damagePotential.set(toyx.getInt("damagePotential:max"), toyx.getInt("damagePotential:current"));
-			this.blockChance = toyx.getInt("blockChance");
-			this.damageResistance = toyx.getInt("damageResistance");
-			
-			// Inventory
-			this.inventory.gold = toyx.getInt("inventory:gold");
-			
-			// TODO questProgress
-			// TODO skillLevels
-			this.availableSkillIncreases = toyx.getInt("availableSkillIncreases");
-			// TODO alignments
-			this.ap.set(toyx.getInt("ap:max"), toyx.getInt("ap:current"));
-			this.health.set(toyx.getInt("health:max"), toyx.getInt("health:current"));
-			// TODO conditions
-			// TODO spawnMap
-			// TODO spawnPlace
-		} catch (TwinspriteException e) {
-			Log.e("Twinsprite", e.getDetailMessage());
-		}
-	}
-
-	public void saveToyxData(Toyx toyx) {
-		try {
-			toyx.putInt("baseTraits:maxAP", baseTraits.maxAP);
-			toyx.putInt("baseTraits:maxHP", baseTraits.maxHP);
-			toyx.putInt("baseTraits:moveCost", baseTraits.moveCost);
-			toyx.putInt("baseTraits:attackCost", baseTraits.attackCost);
-			toyx.putInt("baseTraits:attackChance", baseTraits.attackChance);
-			toyx.putInt("baseTraits:criticalSkill", baseTraits.criticalSkill);
-			toyx.put("baseTraits:criticalMultiplier", Float.toString(baseTraits.criticalMultiplier));
-			toyx.putInt("baseTraits:damagePotential:max", baseTraits.damagePotential.max);
-			toyx.putInt("baseTraits:damagePotential:current", baseTraits.damagePotential.current);
-			toyx.putInt("baseTraits:blockChance", baseTraits.blockChance);
-			toyx.putInt("baseTraits:damageResistance", baseTraits.damageResistance);
-			toyx.putInt("baseTraits:useItemCost", baseTraits.useItemCost);
-			toyx.putInt("baseTraits:reequipCost", baseTraits.reequipCost);
-			
-			toyx.put("name", this.name);
-			toyx.putInt("level", this.level);
-			toyx.putInt("totalExperience", this.totalExperience);
-			
-			toyx.putInt("moveCost", moveCost);
-			toyx.putInt("attackCost", attackCost);
-			toyx.putInt("attackChance", attackChance);
-			toyx.putInt("criticalSkill", criticalSkill);
-			toyx.put("criticalMultiplier", Float.toString(criticalMultiplier));
-			toyx.putInt("damagePotential:max", damagePotential.max);
-			toyx.putInt("damagePotential:current", damagePotential.current);
-			toyx.putInt("blockChance", blockChance);
-			toyx.putInt("damageResistance", damageResistance);
-			
-			// Inventory
-			toyx.putInt("inventory:gold",this.inventory.gold );
-			
-			toyx.putInt("availableSkillIncreases", this.availableSkillIncreases);
-			toyx.putInt("ap:max", this.ap.max);
-			toyx.putInt("ap:current", this.ap.current);
-			toyx.putInt("health:max", this.health.max);
-			toyx.putInt("health:current", this.health.current);
-		} catch (TwinspriteException e) {
-			Log.e("Twinsprite", e.getDetailMessage());
-		}
-
 	}
 
 	public void initializeNewPlayer(DropListCollection dropLists, String playerName) {

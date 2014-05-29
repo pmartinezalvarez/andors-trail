@@ -77,7 +77,7 @@ public final class AndorsTrailApplication extends Application {
 		super.onCreate();
 		// Initializes the Twinsprite SDK
 		Twinsprite.initialize(this, getResources().getString(R.string.twinsprite_api_key),
-				getResources().getString(R.string.twinsprite_secret_key));
+				getResources().getString(R.string.twinsprite_secret_key), 10000);
 
 	}
 

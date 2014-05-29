@@ -15,6 +15,7 @@ import android.widget.Toast;
 import com.gpl.rpg.AndorsTrail.AndorsTrailApplication;
 import com.gpl.rpg.AndorsTrail.R;
 import com.gpl.rpg.AndorsTrail.model.ModelContainer;
+import com.gpl.rpg.AndorsTrail.twinsprite.ToyxManager;
 import com.twinsprite.Twinsprite;
 import com.twinsprite.TwinspriteException;
 import com.twinsprite.callback.CreateSessionCallback;
@@ -65,7 +66,7 @@ public final class TwinspriteActivity extends Activity {
 			progress.setMessage("Saving toyx...");
 			progress.show();
 
-			model.player.saveToyxData(app.getToyx());
+			ToyxManager.savePlayer(app.getToyx(), model.player);
 
 			app.getToyx().saveInBackground(new SaveCallback() {
 
@@ -121,8 +122,8 @@ public final class TwinspriteActivity extends Activity {
 								progress.dismiss();
 								if (e == null) {
 									app.setToyx(toyx);
-									Log.d("Twinsprite", "Toyx " + toyxid + " fectched successfully: " + toyx.toString());
-									model.player.loadToyxData(toyx);
+									Log.d("Twinsprite", "Toyx " + toyxid + " fectched successfully");
+									ToyxManager.loadPlayer(app.getToyx(), model.player);
 									TwinspriteActivity.this.finish();
 								} else {
 									TwinspriteActivity.this.showDialog(

@@ -273,6 +273,17 @@ public final class Dialogs {
 		.show();
 	}
 
+	public static boolean showTwinsprite(final Activity mainActivity, final ControllerContext controllerContext, final WorldContext world) {
+		if (world.model.uiSelections.isInCombat) {
+			Toast.makeText(mainActivity, R.string.twinsprite_menu_not_allowed_in_combat, Toast.LENGTH_SHORT).show();
+			return false;
+		}
+		controllerContext.gameRoundController.pause();
+		Intent intent = new Intent(mainActivity, TwinspriteActivity.class);
+		mainActivity.startActivity(intent);
+		return true;
+	}
+	
 	public static boolean showSave(final Activity mainActivity, final ControllerContext controllerContext, final WorldContext world) {
 		if (world.model.uiSelections.isInCombat) {
 			Toast.makeText(mainActivity, R.string.menu_save_saving_not_allowed_in_combat, Toast.LENGTH_SHORT).show();

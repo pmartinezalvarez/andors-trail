@@ -1,14 +1,22 @@
 package com.gpl.rpg.AndorsTrail.activity;
 
+import java.lang.ref.WeakReference;
+import java.util.Collection;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.*;
+import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.SubMenu;
+import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.gpl.rpg.AndorsTrail.AndorsTrailApplication;
 import com.gpl.rpg.AndorsTrail.AndorsTrailPreferences;
 import com.gpl.rpg.AndorsTrail.Dialogs;
@@ -29,26 +37,24 @@ import com.gpl.rpg.AndorsTrail.model.map.MapObject;
 import com.gpl.rpg.AndorsTrail.model.map.PredefinedMap;
 import com.gpl.rpg.AndorsTrail.savegames.Savegames;
 import com.gpl.rpg.AndorsTrail.util.Coord;
-import com.gpl.rpg.AndorsTrail.view.*;
+import com.gpl.rpg.AndorsTrail.view.CombatView;
+import com.gpl.rpg.AndorsTrail.view.DisplayActiveActorConditionIcons;
+import com.gpl.rpg.AndorsTrail.view.MainView;
 import com.gpl.rpg.AndorsTrail.view.QuickButton.QuickButtonContextMenuInfo;
+import com.gpl.rpg.AndorsTrail.view.QuickitemView;
+import com.gpl.rpg.AndorsTrail.view.StatusView;
+import com.gpl.rpg.AndorsTrail.view.ToolboxView;
+import com.gpl.rpg.AndorsTrail.view.VirtualDpadView;
 
-import java.lang.ref.WeakReference;
-import java.util.Collection;
-
-public final class MainActivity
-		extends Activity
-		implements
-		PlayerMovementListener
-		, CombatActionListener
-		, CombatTurnListener
-		, WorldEventListener {
+public final class MainActivity extends Activity implements PlayerMovementListener, CombatActionListener,
+		CombatTurnListener, WorldEventListener {
 
 	public static final int INTENTREQUEST_MONSTERENCOUNTER = 2;
 	public static final int INTENTREQUEST_CONVERSATION = 4;
 	public static final int INTENTREQUEST_SAVEGAME = 8;
 
 	private ControllerContext controllers;
-	private WorldContext world;
+	public WorldContext world;
 
 	private MainView mainview;
 	private StatusView statusview;
@@ -66,7 +72,10 @@ public final class MainActivity
 		super.onCreate(savedInstanceState);
 
 		AndorsTrailApplication app = AndorsTrailApplication.getApplicationFromActivity(this);
-		if (!app.isInitialized()) { finish(); return; }
+		if (!app.isInitialized()) {
+			finish();
+			return;
+		}
 		AndorsTrailPreferences preferences = app.getPreferences();
 		this.world = app.getWorld();
 		this.controllers = app.getControllerContext();
@@ -77,7 +86,8 @@ public final class MainActivity
 		statusview = (StatusView) findViewById(R.id.main_statusview);
 		combatview = (CombatView) findViewById(R.id.main_combatview);
 		quickitemview = (QuickitemView) findViewById(R.id.main_quickitemview);
-		activeConditions = new DisplayActiveActorConditionIcons(controllers, world, this, (RelativeLayout) findViewById(R.id.statusview_activeconditions));
+		activeConditions = new DisplayActiveActorConditionIcons(controllers, world, this,
+				(RelativeLayout) findViewById(R.id.statusview_activeconditions));
 		VirtualDpadView dpad = (VirtualDpadView) findViewById(R.id.main_virtual_dpad);
 		toolboxview = (ToolboxView) findViewById(R.id.main_toolboxview);
 		statusview.registerToolboxViews(toolboxview, quickitemview);
@@ -123,10 +133,12 @@ public final class MainActivity
 			controllers.mapController.applyCurrentMapReplacements(getResources(), true);
 			break;
 		case INTENTREQUEST_SAVEGAME:
-			if (resultCode != Activity.RESULT_OK) break;
+			if (resultCode != Activity.RESULT_OK)
+				break;
 			final int slot = data.getIntExtra("slot", 1);
 			if (save(slot)) {
-				Toast.makeText(this, getResources().getString(R.string.menu_save_gamesaved, slot), Toast.LENGTH_SHORT).show();
+				Toast.makeText(this, getResources().getString(R.string.menu_save_gamesaved, slot), Toast.LENGTH_SHORT)
+						.show();
 			} else {
 				Toast.makeText(this, R.string.menu_save_failed, Toast.LENGTH_LONG).show();
 			}
@@ -136,13 +148,19 @@ public final class MainActivity
 
 	private boolean save(int slot) {
 		final Player player = world.model.player;
-		return Savegames.saveWorld(world, this, slot, getString(R.string.savegame_currenthero_displayinfo, player.getLevel(), player.getTotalExperience(), player.getGold()));
+		return Savegames.saveWorld(
+				world,
+				this,
+				slot,
+				getString(R.string.savegame_currenthero_displayinfo, player.getLevel(), player.getTotalExperience(),
+						player.getGold()));
 	}
 
 	@Override
 	protected void onStart() {
 		super.onStart();
-		if (!AndorsTrailApplication.getApplicationFromActivity(this).getWorldSetup().isSceneReady) return;
+		if (!AndorsTrailApplication.getApplicationFromActivity(this).getWorldSetup().isSceneReady)
+			return;
 		subscribeToModelChanges();
 	}
 
@@ -164,7 +182,8 @@ public final class MainActivity
 	@Override
 	protected void onResume() {
 		super.onResume();
-		if (!AndorsTrailApplication.getApplicationFromActivity(this).getWorldSetup().isSceneReady) return;
+		if (!AndorsTrailApplication.getApplicationFromActivity(this).getWorldSetup().isSceneReady)
+			return;
 
 		controllers.gameRoundController.resume();
 
@@ -198,31 +217,33 @@ public final class MainActivity
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		super.onCreateContextMenu(menu, v, menuInfo);
-		if(quickitemview.isQuickButtonId(v.getId())){
+		if (quickitemview.isQuickButtonId(v.getId())) {
 			createQuickButtonMenu(menu);
 		}
 		lastSelectedMenu = null;
 	}
 
-	private void createQuickButtonMenu(ContextMenu menu){
+	private void createQuickButtonMenu(ContextMenu menu) {
 		menu.add(Menu.NONE, R.id.quick_menu_unassign, Menu.NONE, R.string.inventory_unassign);
 		SubMenu assignMenu = menu.addSubMenu(Menu.NONE, R.id.quick_menu_assign, Menu.NONE, R.string.inventory_assign);
-		for(int i=0; i<world.model.player.inventory.items.size(); ++i){
+		for (int i = 0; i < world.model.player.inventory.items.size(); ++i) {
 			ItemEntry itemEntry = world.model.player.inventory.items.get(i);
-			if(itemEntry.itemType.isUsable())
-				assignMenu.add(R.id.quick_menu_assign_group, i, Menu.NONE, itemEntry.itemType.getName(world.model.player));
+			if (itemEntry.itemType.isUsable())
+				assignMenu.add(R.id.quick_menu_assign_group, i, Menu.NONE,
+						itemEntry.itemType.getName(world.model.player));
 		}
 	}
 
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 		QuickButtonContextMenuInfo menuInfo;
-		if(item.getGroupId() == R.id.quick_menu_assign_group){
+		if (item.getGroupId() == R.id.quick_menu_assign_group) {
 			menuInfo = (QuickButtonContextMenuInfo) lastSelectedMenu;
-			controllers.itemController.setQuickItem(world.model.player.inventory.items.get(item.getItemId()).itemType, menuInfo.index);
+			controllers.itemController.setQuickItem(world.model.player.inventory.items.get(item.getItemId()).itemType,
+					menuInfo.index);
 			return true;
 		}
-		switch(item.getItemId()){
+		switch (item.getItemId()) {
 		case R.id.quick_menu_unassign:
 			menuInfo = (QuickButtonContextMenuInfo) item.getMenuInfo();
 			controllers.itemController.setQuickItem(null, menuInfo.index);
@@ -256,10 +277,13 @@ public final class MainActivity
 	}
 
 	private void showToast(String msg, int duration) {
-		if (msg == null) return;
-		if (msg.length() == 0) return;
+		if (msg == null)
+			return;
+		if (msg.length() == 0)
+			return;
 		Toast t = null;
-		if (lastToast != null) t = lastToast.get();
+		if (lastToast != null)
+			t = lastToast.get();
 		if (t == null) {
 			t = Toast.makeText(this, msg, duration);
 			lastToast = new WeakReference<Toast>(t);
@@ -270,12 +294,13 @@ public final class MainActivity
 		t.show();
 	}
 
+	@Override
+	public void onPlayerMoved(Coord newPosition, Coord previousPosition) {
+	}
 
 	@Override
-	public void onPlayerMoved(Coord newPosition, Coord previousPosition) { }
-
-	@Override
-	public void onPlayerEnteredNewMap(PredefinedMap map, Coord p) { }
+	public void onPlayerEnteredNewMap(PredefinedMap map, Coord p) {
+	}
 
 	@Override
 	public void onCombatStarted() {
@@ -327,13 +352,16 @@ public final class MainActivity
 	}
 
 	@Override
-	public void onPlayerKilledMonster(Monster target) { }
+	public void onPlayerKilledMonster(Monster target) {
+	}
 
 	@Override
-	public void onNewPlayerTurn() { }
+	public void onNewPlayerTurn() {
+	}
 
 	@Override
-	public void onMonsterIsAttacking(Monster m) { }
+	public void onMonsterIsAttacking(Monster m) {
+	}
 
 	@Override
 	public void onPlayerStartedConversation(Monster m, String phraseID) {
@@ -373,8 +401,10 @@ public final class MainActivity
 
 	@Override
 	public void onPlayerPickedUpGroundLoot(Loot loot) {
-		if (controllers.preferences.displayLoot == AndorsTrailPreferences.DISPLAYLOOT_NONE) return;
-		if (!showToastForPickedUpItems(loot)) return;
+		if (controllers.preferences.displayLoot == AndorsTrailPreferences.DISPLAYLOOT_NONE)
+			return;
+		if (!showToastForPickedUpItems(loot))
+			return;
 
 		final String msg = Dialogs.getGroundLootPickedUpMessage(this, loot);
 		showToast(msg, Toast.LENGTH_LONG);
@@ -382,11 +412,11 @@ public final class MainActivity
 
 	private boolean showToastForPickedUpItems(Loot loot) {
 		switch (controllers.preferences.displayLoot) {
-			case AndorsTrailPreferences.DISPLAYLOOT_TOAST:
-			case AndorsTrailPreferences.DISPLAYLOOT_DIALOG_FOR_ITEMS_ELSE_TOAST:
-				return true;
-			case AndorsTrailPreferences.DISPLAYLOOT_TOAST_FOR_ITEMS:
-				return loot.hasItems();
+		case AndorsTrailPreferences.DISPLAYLOOT_TOAST:
+		case AndorsTrailPreferences.DISPLAYLOOT_DIALOG_FOR_ITEMS_ELSE_TOAST:
+			return true;
+		case AndorsTrailPreferences.DISPLAYLOOT_TOAST_FOR_ITEMS:
+			return loot.hasItems();
 		}
 		return false;
 	}
@@ -400,10 +430,12 @@ public final class MainActivity
 
 	@Override
 	public void onPlayerPickedUpMonsterLoot(Collection<Loot> loot, int exp) {
-		if (controllers.preferences.displayLoot == AndorsTrailPreferences.DISPLAYLOOT_NONE) return;
+		if (controllers.preferences.displayLoot == AndorsTrailPreferences.DISPLAYLOOT_NONE)
+			return;
 
 		final Loot combinedLoot = Loot.combine(loot);
-		if (!showToastForPickedUpItems(combinedLoot)) return;
+		if (!showToastForPickedUpItems(combinedLoot))
+			return;
 
 		final String msg = Dialogs.getMonsterLootPickedUpMessage(this, combinedLoot, exp);
 		showToast(msg, Toast.LENGTH_LONG);

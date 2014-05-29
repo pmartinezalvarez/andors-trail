@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:padding="@dimen/dialog_margin"
+	android:orientation="vertical"
+	>
+
+	<TextView
+		android:id="@+id/twinsprite_title"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:text="@string/twinsprite_dialog_title"
+		style="@style/titleWithIcon"
+		/>
+
+	<ScrollView
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		>
+		<LinearLayout
+			android:id="@+id/twinsprite_action_list"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="vertical"
+			>
+			<Button
+				android:id="@+id/twinsprite_action_scan"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:text="@string/twinsprite_dialog_action_scan"
+				android:onClick="scan"
+				/>
+			<Button
+				android:id="@+id/twinsprite_action_save"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:text="@string/twinsprite_dialog_action_save"
+				android:onClick="save"
+				/>
+		</LinearLayout>
+
+	</ScrollView>
+
+</LinearLayout>

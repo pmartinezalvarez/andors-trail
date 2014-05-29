@@ -1,7 +1,16 @@
 package com.gpl.rpg.AndorsTrail.model.actor;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map.Entry;
+
 import android.util.FloatMath;
+import android.util.Log;
 import android.util.SparseIntArray;
+
 import com.gpl.rpg.AndorsTrail.AndorsTrailApplication;
 import com.gpl.rpg.AndorsTrail.context.ControllerContext;
 import com.gpl.rpg.AndorsTrail.context.WorldContext;
@@ -17,13 +26,8 @@ import com.gpl.rpg.AndorsTrail.savegames.LegacySavegameFormatReaderForPlayer;
 import com.gpl.rpg.AndorsTrail.util.Coord;
 import com.gpl.rpg.AndorsTrail.util.Range;
 import com.gpl.rpg.AndorsTrail.util.Size;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map.Entry;
+import com.twinsprite.TwinspriteException;
+import com.twinsprite.entity.Toyx;
 
 public final class Player extends Actor {
 
@@ -34,7 +38,8 @@ public final class Player extends Actor {
 	// TODO: Should be privates
 	public int level;
 	public final PlayerBaseTraits baseTraits = new PlayerBaseTraits();
-	public final Range levelExperience; // ranges from 0 to the delta-amount of exp required for next level
+	public final Range levelExperience; // ranges from 0 to the delta-amount of
+										// exp required for next level
 	public final Inventory inventory;
 	private final SparseIntArray skillLevels = new SparseIntArray();
 	public int availableSkillIncreases = 0;
@@ -42,7 +47,7 @@ public final class Player extends Actor {
 	public int reequipCost;
 	public int totalExperience;
 
-	private final HashMap<String, HashSet<Integer> > questProgress = new HashMap<String, HashSet<Integer> >();
+	private final HashMap<String, HashSet<Integer>> questProgress = new HashMap<String, HashSet<Integer>>();
 	private String spawnMap;
 	private String spawnPlace;
 	private final HashMap<String, Integer> alignments = new HashMap<String, Integer>();
@@ -81,15 +86,104 @@ public final class Player extends Actor {
 	}
 
 	public Player() {
-		super(
-			new Size(1, 1)
-			, true // isPlayer
-			, false // isImmuneToCriticalHits
+		super(new Size(1, 1), true // isPlayer
+				, false // isImmuneToCriticalHits
 		);
 		this.lastPosition = new Coord();
 		this.nextPosition = new Coord();
 		this.levelExperience = new Range();
 		this.inventory = new Inventory();
+	}
+
+	public void loadToyxData(Toyx toyx) {
+		try {
+			// TODO iconID
+			baseTraits.maxAP = toyx.getInt("baseTraits:maxAP");
+			baseTraits.maxHP = toyx.getInt("baseTraits:maxHP");
+			baseTraits.moveCost = toyx.getInt("baseTraits:moveCost");
+			baseTraits.attackCost = toyx.getInt("baseTraits:attackCost");
+			baseTraits.attackChance = toyx.getInt("baseTraits:attackChance");
+			baseTraits.criticalSkill = toyx.getInt("baseTraits:criticalSkill");
+			baseTraits.criticalMultiplier = Float.valueOf(toyx.getString("baseTraits:criticalMultiplier"));
+			baseTraits.damagePotential.set(toyx.getInt("baseTraits:damagePotential:max"),
+					toyx.getInt("baseTraits:damagePotential:current"));
+			baseTraits.blockChance = toyx.getInt("baseTraits:blockChance");
+			baseTraits.damageResistance = toyx.getInt("baseTraits:damageResistance");
+			baseTraits.useItemCost = toyx.getInt("baseTraits:useItemCost");
+			baseTraits.reequipCost = toyx.getInt("baseTraits:reequipCost");
+			
+			this.name = toyx.getString("name");
+			this.level = toyx.getInt("level");
+			this.totalExperience = toyx.getInt("totalExperience");
+			
+			this.moveCost = toyx.getInt("moveCost");
+			this.attackCost = toyx.getInt("attackCost");
+			this.attackChance = toyx.getInt("attackChance");
+			this.criticalSkill = toyx.getInt("criticalSkill");
+			this.criticalMultiplier = Float.valueOf(toyx.getString("criticalMultiplier"));
+			this.damagePotential.set(toyx.getInt("damagePotential:max"), toyx.getInt("damagePotential:current"));
+			this.blockChance = toyx.getInt("blockChance");
+			this.damageResistance = toyx.getInt("damageResistance");
+			
+			// Inventory
+			this.inventory.gold = toyx.getInt("inventory:gold");
+			
+			// TODO questProgress
+			// TODO skillLevels
+			this.availableSkillIncreases = toyx.getInt("availableSkillIncreases");
+			// TODO alignments
+			this.ap.set(toyx.getInt("ap:max"), toyx.getInt("ap:current"));
+			this.health.set(toyx.getInt("health:max"), toyx.getInt("health:current"));
+			// TODO conditions
+			// TODO spawnMap
+			// TODO spawnPlace
+		} catch (TwinspriteException e) {
+			Log.e("Twinsprite", e.getDetailMessage());
+		}
+	}
+
+	public void saveToyxData(Toyx toyx) {
+		try {
+			toyx.putInt("baseTraits:maxAP", baseTraits.maxAP);
+			toyx.putInt("baseTraits:maxHP", baseTraits.maxHP);
+			toyx.putInt("baseTraits:moveCost", baseTraits.moveCost);
+			toyx.putInt("baseTraits:attackCost", baseTraits.attackCost);
+			toyx.putInt("baseTraits:attackChance", baseTraits.attackChance);
+			toyx.putInt("baseTraits:criticalSkill", baseTraits.criticalSkill);
+			toyx.put("baseTraits:criticalMultiplier", Float.toString(baseTraits.criticalMultiplier));
+			toyx.putInt("baseTraits:damagePotential:max", baseTraits.damagePotential.max);
+			toyx.putInt("baseTraits:damagePotential:current", baseTraits.damagePotential.current);
+			toyx.putInt("baseTraits:blockChance", baseTraits.blockChance);
+			toyx.putInt("baseTraits:damageResistance", baseTraits.damageResistance);
+			toyx.putInt("baseTraits:useItemCost", baseTraits.useItemCost);
+			toyx.putInt("baseTraits:reequipCost", baseTraits.reequipCost);
+			
+			toyx.put("name", this.name);
+			toyx.putInt("level", this.level);
+			toyx.putInt("totalExperience", this.totalExperience);
+			
+			toyx.putInt("moveCost", moveCost);
+			toyx.putInt("attackCost", attackCost);
+			toyx.putInt("attackChance", attackChance);
+			toyx.putInt("criticalSkill", criticalSkill);
+			toyx.put("criticalMultiplier", Float.toString(criticalMultiplier));
+			toyx.putInt("damagePotential:max", damagePotential.max);
+			toyx.putInt("damagePotential:current", damagePotential.current);
+			toyx.putInt("blockChance", blockChance);
+			toyx.putInt("damageResistance", damageResistance);
+			
+			// Inventory
+			toyx.putInt("inventory:gold",this.inventory.gold );
+			
+			toyx.putInt("availableSkillIncreases", this.availableSkillIncreases);
+			toyx.putInt("ap:max", this.ap.max);
+			toyx.putInt("ap:current", this.ap.current);
+			toyx.putInt("health:max", this.health.max);
+			toyx.putInt("health:current", this.health.current);
+		} catch (TwinspriteException e) {
+			Log.e("Twinsprite", e.getDetailMessage());
+		}
+
 	}
 
 	public void initializeNewPlayer(DropListCollection dropLists, String playerName) {
@@ -131,46 +225,61 @@ public final class Player extends Actor {
 		}
 	}
 
-	public boolean hasExactQuestProgress(QuestProgress progress) { return hasExactQuestProgress(progress.questID, progress.progress); }
+	public boolean hasExactQuestProgress(QuestProgress progress) {
+		return hasExactQuestProgress(progress.questID, progress.progress);
+	}
+
 	public boolean hasExactQuestProgress(String questID, int progress) {
-		if (!questProgress.containsKey(questID)) return false;
+		if (!questProgress.containsKey(questID))
+			return false;
 		return questProgress.get(questID).contains(progress);
 	}
+
 	public boolean hasAnyQuestProgress(String questID) {
 		return questProgress.containsKey(questID);
 	}
+
 	public boolean isLatestQuestProgress(String questID, int progress) {
-		if (!questProgress.containsKey(questID)) return false;
-		if (!questProgress.get(questID).contains(progress)) return false;
+		if (!questProgress.containsKey(questID))
+			return false;
+		if (!questProgress.get(questID).contains(progress))
+			return false;
 		for (int i : questProgress.get(questID)) {
-			if (i > progress) return false;
+			if (i > progress)
+				return false;
 		}
 		return true;
 	}
+
 	public boolean addQuestProgress(QuestProgress progress) {
-		if (hasExactQuestProgress(progress.questID, progress.progress)) return false;
-		if (!questProgress.containsKey(progress.questID)) questProgress.put(progress.questID, new HashSet<Integer>());
+		if (hasExactQuestProgress(progress.questID, progress.progress))
+			return false;
+		if (!questProgress.containsKey(progress.questID))
+			questProgress.put(progress.questID, new HashSet<Integer>());
 		questProgress.get(progress.questID).add(progress.progress);
-		return true; //Progress was added.
+		return true; // Progress was added.
 	}
 
 	public void recalculateLevelExperience() {
 		int experienceRequiredToReachThisLevel = getRequiredExperience(level);
-		levelExperience.set(getRequiredExperienceForNextLevel(level), totalExperience - experienceRequiredToReachThisLevel);
+		levelExperience.set(getRequiredExperienceForNextLevel(level), totalExperience
+				- experienceRequiredToReachThisLevel);
 	}
 
 	private static int getRequiredExperience(int currentLevel) {
 		int v = 0;
-		for(int i = 1; i < currentLevel; ++i) {
+		for (int i = 1; i < currentLevel; ++i) {
 			v += getRequiredExperienceForNextLevel(i);
 		}
 		return v;
 	}
+
 	private static final int EXP_base = 55;
 	private static final int EXP_D = 400;
 	private static final int EXP_powbase = 2;
+
 	private static int getRequiredExperienceForNextLevel(int currentLevel) {
-		return (int) (EXP_base * Math.pow(currentLevel, EXP_powbase + currentLevel/EXP_D));
+		return (int) (EXP_base * Math.pow(currentLevel, EXP_powbase + currentLevel / EXP_D));
 	}
 
 	public boolean canLevelup() {
@@ -180,27 +289,34 @@ public final class Player extends Actor {
 	public void addSkillLevel(SkillCollection.SkillID skillID) {
 		skillLevels.put(skillID.ordinal(), getSkillLevel(skillID) + 1);
 	}
+
 	public int getSkillLevel(SkillCollection.SkillID skillID) {
 		return skillLevels.get(skillID.ordinal());
 	}
+
 	public boolean hasSkill(SkillCollection.SkillID skillID) {
 		return getSkillLevel(skillID) > 0;
 	}
+
 	public boolean nextLevelAddsNewSkillpoint() {
 		return thisLevelAddsNewSkillpoint(level + 1);
 	}
+
 	private static boolean thisLevelAddsNewSkillpoint(int level) {
 		return ((level - Constants.FIRST_SKILL_POINT_IS_GIVEN_AT_LEVEL) % Constants.NEW_SKILL_POINT_EVERY_N_LEVELS == 0);
 	}
+
 	public boolean hasAvailableSkillpoints() {
 		return availableSkillIncreases > 0;
 	}
 
 	public int getAlignment(String faction) {
 		Integer v = alignments.get(faction);
-		if (v == null) return 0;
+		if (v == null)
+			return 0;
 		return v;
 	}
+
 	public void addAlignment(String faction, int delta) {
 		int newValue = getAlignment(faction) + delta;
 		alignments.put(faction, newValue);
@@ -215,52 +331,83 @@ public final class Player extends Actor {
 		this.name = name;
 	}
 
-	public int getReequipCost() { return reequipCost; }
-	public int getUseItemCost() { return useItemCost; }
-	public int getAvailableSkillIncreases() { return availableSkillIncreases; }
-	public int getLevel() { return level; }
-	public int getTotalExperience() { return totalExperience; }
-	public int getCurrentLevelExperience() { return levelExperience.current; }
-	public int getMaxLevelExperience() { return levelExperience.max; }
-	public int getGold() { return inventory.gold; }
-	public String getSpawnMap() { return spawnMap; }
-	public String getSpawnPlace() { return spawnPlace; }
+	public int getReequipCost() {
+		return reequipCost;
+	}
 
+	public int getUseItemCost() {
+		return useItemCost;
+	}
+
+	public int getAvailableSkillIncreases() {
+		return availableSkillIncreases;
+	}
+
+	public int getLevel() {
+		return level;
+	}
+
+	public int getTotalExperience() {
+		return totalExperience;
+	}
+
+	public int getCurrentLevelExperience() {
+		return levelExperience.current;
+	}
+
+	public int getMaxLevelExperience() {
+		return levelExperience.max;
+	}
+
+	public int getGold() {
+		return inventory.gold;
+	}
+
+	public String getSpawnMap() {
+		return spawnMap;
+	}
+
+	public String getSpawnPlace() {
+		return spawnPlace;
+	}
 
 	public static enum StatID {
-		maxHP
-		,maxAP
-		,moveCost
-		,attackCost
-		,attackChance
-		,criticalSkill
-		,criticalMultiplier
-		,damagePotentialMin
-		,damagePotentialMax
-		,blockChance
-		,damageResistance
+		maxHP, maxAP, moveCost, attackCost, attackChance, criticalSkill, criticalMultiplier, damagePotentialMin, damagePotentialMax, blockChance, damageResistance
 	}
 
 	public int getStatValue(StatID stat) {
 		switch (stat) {
-		case maxHP: return baseTraits.maxHP;
-		case maxAP: return baseTraits.maxAP;
-		case moveCost: return baseTraits.moveCost;
-		case attackCost: return baseTraits.attackCost;
-		case attackChance: return baseTraits.attackChance;
-		case criticalSkill: return baseTraits.criticalSkill;
-		case criticalMultiplier: return (int) FloatMath.floor(baseTraits.criticalMultiplier);
-		case damagePotentialMin: return baseTraits.damagePotential.current;
-		case damagePotentialMax: return baseTraits.damagePotential.max;
-		case blockChance: return baseTraits.blockChance;
-		case damageResistance: return baseTraits.damageResistance;
+		case maxHP:
+			return baseTraits.maxHP;
+		case maxAP:
+			return baseTraits.maxAP;
+		case moveCost:
+			return baseTraits.moveCost;
+		case attackCost:
+			return baseTraits.attackCost;
+		case attackChance:
+			return baseTraits.attackChance;
+		case criticalSkill:
+			return baseTraits.criticalSkill;
+		case criticalMultiplier:
+			return (int) FloatMath.floor(baseTraits.criticalMultiplier);
+		case damagePotentialMin:
+			return baseTraits.damagePotential.current;
+		case damagePotentialMax:
+			return baseTraits.damagePotential.max;
+		case blockChance:
+			return baseTraits.blockChance;
+		case damageResistance:
+			return baseTraits.damageResistance;
 		}
 		return 0;
 	}
 
-	// ====== PARCELABLE ===================================================================
+	// ====== PARCELABLE
+	// ===================================================================
 
-	public static Player newFromParcel(DataInputStream src, WorldContext world, ControllerContext controllers, int fileversion) throws IOException {
+	public static Player newFromParcel(DataInputStream src, WorldContext world, ControllerContext controllers,
+			int fileversion) throws IOException {
 		Player player = new Player(src, world, fileversion);
 		LegacySavegameFormatReaderForPlayer.upgradeSavegame(player, world, controllers, fileversion);
 		return player;
@@ -269,10 +416,12 @@ public final class Player extends Actor {
 	public Player(DataInputStream src, WorldContext world, int fileversion) throws IOException {
 		this();
 
-		if (fileversion <= 33) LegacySavegameFormatReaderForPlayer.readCombatTraitsPreV034(src, fileversion);
+		if (fileversion <= 33)
+			LegacySavegameFormatReaderForPlayer.readCombatTraitsPreV034(src, fileversion);
 
 		this.baseTraits.iconID = src.readInt();
-		if (fileversion <= 33) /*this.tileSize = */new Size(src, fileversion);
+		if (fileversion <= 33) /* this.tileSize = */
+			new Size(src, fileversion);
 		this.baseTraits.maxAP = src.readInt();
 		this.baseTraits.maxHP = src.readInt();
 		this.name = src.readUTF();
@@ -301,7 +450,7 @@ public final class Player extends Actor {
 		this.position.set(new Coord(src, fileversion));
 		if (fileversion > 16) {
 			final int numConditions = src.readInt();
-			for(int i = 0; i < numConditions; ++i) {
+			for (int i = 0; i < numConditions; ++i) {
 				this.conditions.add(new ActorCondition(src, world, fileversion));
 			}
 		}
@@ -312,12 +461,13 @@ public final class Player extends Actor {
 		this.totalExperience = src.readInt();
 		this.inventory.readFromParcel(src, world, fileversion);
 
-		if (fileversion <= 13) LegacySavegameFormatReaderForPlayer.readQuestProgressPreV13(this, src, world, fileversion);
+		if (fileversion <= 13)
+			LegacySavegameFormatReaderForPlayer.readQuestProgressPreV13(this, src, world, fileversion);
 
 		this.baseTraits.useItemCost = src.readInt();
 		this.baseTraits.reequipCost = src.readInt();
 		final int numSkills = src.readInt();
-		for(int i = 0; i < numSkills; ++i) {
+		for (int i = 0; i < numSkills; ++i) {
 			if (fileversion <= 21) {
 				this.skillLevels.put(i, src.readInt());
 			} else {
@@ -330,11 +480,11 @@ public final class Player extends Actor {
 
 		if (fileversion > 13) {
 			final int numQuests = src.readInt();
-			for(int i = 0; i < numQuests; ++i) {
+			for (int i = 0; i < numQuests; ++i) {
 				final String questID = src.readUTF();
 				this.questProgress.put(questID, new HashSet<Integer>());
 				final int numProgress = src.readInt();
-				for(int j = 0; j < numProgress; ++j) {
+				for (int j = 0; j < numProgress; ++j) {
 					int progress = src.readInt();
 					this.questProgress.get(questID).add(progress);
 				}
@@ -348,7 +498,7 @@ public final class Player extends Actor {
 
 		if (fileversion >= 26) {
 			final int numAlignments = src.readInt();
-			for(int i = 0; i < numAlignments; ++i) {
+			for (int i = 0; i < numAlignments; ++i) {
 				final String faction = src.readUTF();
 				final int alignment = src.readInt();
 				this.alignments.put(faction, alignment);
@@ -393,19 +543,18 @@ public final class Player extends Actor {
 		dest.writeUTF(spawnMap);
 		dest.writeUTF(spawnPlace);
 		dest.writeInt(questProgress.size());
-		for(Entry<String, HashSet<Integer> > e : questProgress.entrySet()) {
+		for (Entry<String, HashSet<Integer>> e : questProgress.entrySet()) {
 			dest.writeUTF(e.getKey());
 			dest.writeInt(e.getValue().size());
-			for(int progress : e.getValue()) {
+			for (int progress : e.getValue()) {
 				dest.writeInt(progress);
 			}
 		}
 		dest.writeInt(availableSkillIncreases);
 		dest.writeInt(alignments.size());
-		for(Entry<String, Integer> e : alignments.entrySet()) {
+		for (Entry<String, Integer> e : alignments.entrySet()) {
 			dest.writeUTF(e.getKey());
 			dest.writeInt(e.getValue());
 		}
 	}
 }
-

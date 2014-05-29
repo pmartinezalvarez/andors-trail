@@ -9,7 +9,19 @@
 	<string name="menu_save">Save</string>
 	<string name="menu_save_gamesaved">Game was saved to slot %1$d</string>
 	<string name="menu_save_failed">Failed to save game! Is the SD card mounted and writable?</string>
-
+	
+	<string name="twinsprite_api_key">88F0751093C04C08BD04AA3BDD03082E</string>
+	<string name="twinsprite_secret_key">97C72842CE1E4710AA4652BCA1994813</string>
+	<string name="twinsprite_session_failed">Error creating toyx session</string>
+	<string name="twinsprite_fetch_failed">Error fetching toyx data</string>
+	<string name="twinsprite_save_failed">Error saving toyx data</string>
+	<string name="twinsprite_dialog_title">Twinsprite Menu</string>
+	<string name="twinsprite_dialog_action">Scan your hero or save your game progress</string>
+	<string name="twinsprite_dialog_action_scan">Scan Your Hero</string>
+	<string name="twinsprite_dialog_action_save">Save Progress</string>
+	<string name="twinsprite_menu_not_allowed_in_combat">Twinsprite menu is not available in combat mode.</string>
+	<string name="twinsprite_scan_before_save">You have to scan your toyx before save.</string>
+	
 	<string name="loadsave_title_save">Save game</string>
 	<string name="loadsave_title_load">Load saved game</string>
 	<string name="loadsave_selectslot">Select slot</string>

@@ -26,6 +26,8 @@ import com.twinsprite.entity.Toyx;
 public final class TwinspriteActivity extends Activity {
 
 	public static final int INTENTREQUEST_SCAN = 2;
+	
+	private static final String TWINSPRITE_SCAN_BASE_URI = "https://scan.twinsprite.com/";
 
 	private AndorsTrailApplication app;
 
@@ -97,7 +99,11 @@ public final class TwinspriteActivity extends Activity {
 			if (resultCode != Activity.RESULT_OK)
 				break;
 
-			final String toyxid = data.getStringExtra("SCAN_RESULT");
+			String toyxid = data.getStringExtra("SCAN_RESULT");
+			
+			if(toyxid.startsWith(TWINSPRITE_SCAN_BASE_URI)){
+				toyxid = toyxid.replace(TWINSPRITE_SCAN_BASE_URI, "");
+			}
 
 			// Initializes the Twinsprite SDK
 			Twinsprite.initialize(this, getResources().getString(R.string.twinsprite_api_key), getResources()
@@ -115,14 +121,12 @@ public final class TwinspriteActivity extends Activity {
 				public void onCreateSession(TwinspriteException e) {
 					progress.dismiss();
 					if (e == null) {
-						Log.d("Twinsprite", "Session created for toyx " + toyxid);
 						app.getToyx().fetchInBackground(new GetCallback() {
 							@Override
 							public void onFetch(Toyx toyx, TwinspriteException e) {
 								progress.dismiss();
 								if (e == null) {
 									app.setToyx(toyx);
-									Log.d("Twinsprite", "Toyx " + toyxid + " fectched successfully");
 									ToyxManager.loadPlayer(app.getToyx(), model.player);
 									TwinspriteActivity.this.finish();
 								} else {

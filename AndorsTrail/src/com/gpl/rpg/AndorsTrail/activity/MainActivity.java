@@ -222,8 +222,7 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 		// Setup an intent filter for all MIME based dispatches (URI);
 		IntentFilter ndefURI = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
 		try {
-			ndefURI.addDataScheme("http");
-			;
+			ndefURI.addDataScheme("https");
 		} catch (Exception e) {
 			Log.e("TWINSPRITE", "URI SCHEME EXCEPTION!");
 			throw new RuntimeException("fail", e);
@@ -270,13 +269,18 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 			break;
 		}
 	}
-	
-	private void updateNewPlayer(){
-		this.controllers.actorStatsController.recalculatePlayerStats(world.model.player);
-		this.statusview.updateIcon(world.model.player.canLevelup());
-		this.world.model.player.nextPosition.x = this.world.model.player.position.x;
-		this.world.model.player.nextPosition.y = this.world.model.player.position.y;
-		controllers.movementController.moveToNextIfPossible();
+
+	private void updateNewPlayer() {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				controllers.actorStatsController.recalculatePlayerStats(world.model.player);
+				statusview.updateIcon(world.model.player.canLevelup());
+				world.model.player.nextPosition.x = world.model.player.position.x;
+				world.model.player.nextPosition.y = world.model.player.position.y;
+				controllers.movementController.moveToNextIfPossible();
+			}
+		});
 	}
 
 	private boolean save(int slot) {
@@ -728,6 +732,7 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 							progress.dismiss();
 							if (e == null) {
 								app.setToyx(toyx);
+								Log.i("Twinsprie", "Toyx " + toyx.getToyxId() + " fetched successfully.");
 								ToyxManager.loadPlayer(app.getToyx(), world.model.player);
 								updateNewPlayer();
 							} else {

@@ -1,11 +1,30 @@
 package com.gpl.rpg.AndorsTrail.activity;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.IntentFilter.MalformedMimeTypeException;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcManager;
+import android.nfc.tech.NfcF;
 import android.os.Bundle;
+import android.os.Parcelable;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
@@ -36,6 +55,7 @@ import com.gpl.rpg.AndorsTrail.model.item.Loot;
 import com.gpl.rpg.AndorsTrail.model.map.MapObject;
 import com.gpl.rpg.AndorsTrail.model.map.PredefinedMap;
 import com.gpl.rpg.AndorsTrail.savegames.Savegames;
+import com.gpl.rpg.AndorsTrail.twinsprite.ToyxManager;
 import com.gpl.rpg.AndorsTrail.util.Coord;
 import com.gpl.rpg.AndorsTrail.view.CombatView;
 import com.gpl.rpg.AndorsTrail.view.DisplayActiveActorConditionIcons;
@@ -45,6 +65,10 @@ import com.gpl.rpg.AndorsTrail.view.QuickitemView;
 import com.gpl.rpg.AndorsTrail.view.StatusView;
 import com.gpl.rpg.AndorsTrail.view.ToolboxView;
 import com.gpl.rpg.AndorsTrail.view.VirtualDpadView;
+import com.twinsprite.TwinspriteException;
+import com.twinsprite.callback.CreateSessionCallback;
+import com.twinsprite.callback.GetCallback;
+import com.twinsprite.entity.Toyx;
 
 public final class MainActivity extends Activity implements PlayerMovementListener, CombatActionListener,
 		CombatTurnListener, WorldEventListener {
@@ -52,6 +76,7 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 	public static final int INTENTREQUEST_MONSTERENCOUNTER = 2;
 	public static final int INTENTREQUEST_CONVERSATION = 4;
 	public static final int INTENTREQUEST_SAVEGAME = 8;
+	public static final int INTENTREQUEST_TWINSPRITE = 10;
 
 	private ControllerContext controllers;
 	public WorldContext world;
@@ -67,11 +92,58 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 	private WeakReference<Toast> lastToast = null;
 	private ContextMenuInfo lastSelectedMenu = null;
 
+	private static final Map<Byte, String> URI_PREFIX_MAP = new HashMap<Byte, String>();
+	private Activity currentActivity;
+	private NfcAdapter mAdapter = null;
+	private PendingIntent mPendingIntent;
+	private IntentFilter[] mFilters;
+	private String[][] mTechLists;
+
+	private AndorsTrailApplication app;
+	private ProgressDialog progress = null;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		currentActivity = this;
+		URI_PREFIX_MAP.put((byte) 0x00, "");
+		URI_PREFIX_MAP.put((byte) 0x01, "http://www.");
+		URI_PREFIX_MAP.put((byte) 0x02, "https://www.");
+		URI_PREFIX_MAP.put((byte) 0x03, "http://");
+		URI_PREFIX_MAP.put((byte) 0x04, "https://");
+		URI_PREFIX_MAP.put((byte) 0x05, "tel:");
+		URI_PREFIX_MAP.put((byte) 0x06, "mailto:");
+		URI_PREFIX_MAP.put((byte) 0x07, "ftp://anonymous:anonymous@");
+		URI_PREFIX_MAP.put((byte) 0x08, "ftp://ftp.");
+		URI_PREFIX_MAP.put((byte) 0x09, "ftps://");
+		URI_PREFIX_MAP.put((byte) 0x0A, "sftp://");
+		URI_PREFIX_MAP.put((byte) 0x0B, "smb://");
+		URI_PREFIX_MAP.put((byte) 0x0C, "nfs://");
+		URI_PREFIX_MAP.put((byte) 0x0D, "ftp://");
+		URI_PREFIX_MAP.put((byte) 0x0E, "dav://");
+		URI_PREFIX_MAP.put((byte) 0x0F, "news:");
+		URI_PREFIX_MAP.put((byte) 0x10, "telnet://");
+		URI_PREFIX_MAP.put((byte) 0x11, "imap:");
+		URI_PREFIX_MAP.put((byte) 0x12, "rtsp://");
+		URI_PREFIX_MAP.put((byte) 0x13, "urn:");
+		URI_PREFIX_MAP.put((byte) 0x14, "pop:");
+		URI_PREFIX_MAP.put((byte) 0x15, "sip:");
+		URI_PREFIX_MAP.put((byte) 0x16, "sips:");
+		URI_PREFIX_MAP.put((byte) 0x17, "tftp:");
+		URI_PREFIX_MAP.put((byte) 0x18, "btspp://");
+		URI_PREFIX_MAP.put((byte) 0x19, "btl2cap://");
+		URI_PREFIX_MAP.put((byte) 0x1A, "btgoep://");
+		URI_PREFIX_MAP.put((byte) 0x1B, "tcpobex://");
+		URI_PREFIX_MAP.put((byte) 0x1C, "irdaobex://");
+		URI_PREFIX_MAP.put((byte) 0x1D, "file://");
+		URI_PREFIX_MAP.put((byte) 0x1E, "urn:epc:id:");
+		URI_PREFIX_MAP.put((byte) 0x1F, "urn:epc:tag:");
+		URI_PREFIX_MAP.put((byte) 0x20, "urn:epc:pat:");
+		URI_PREFIX_MAP.put((byte) 0x21, "urn:epc:raw:");
+		URI_PREFIX_MAP.put((byte) 0x22, "urn:epc:");
+		URI_PREFIX_MAP.put((byte) 0x23, "urn:nfc:");
 
-		AndorsTrailApplication app = AndorsTrailApplication.getApplicationFromActivity(this);
+		app = AndorsTrailApplication.getApplicationFromActivity(this);
 		if (!app.isInitialized()) {
 			finish();
 			return;
@@ -116,6 +188,51 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 		toolboxview.bringToFront();
 		combatview.bringToFront();
 		statusview.bringToFront();
+
+		this.progress = new ProgressDialog(this);
+		RunNFC();
+	}
+
+	public void RunNFC() {
+		Log.i("TWINSPRITE", "RUNNFC");
+		if (mAdapter != null) {
+			return;
+		}
+
+		NfcManager manager = (NfcManager) currentActivity.getSystemService(Context.NFC_SERVICE);
+		mAdapter = manager.getDefaultAdapter();
+
+		// Create a generic PendingIntent that will be deliver to this activity.
+		// The NFC stack
+		// will fill in the intent with the details of the discovered tag before
+		// delivering to
+		// this activity.
+		mPendingIntent = PendingIntent.getActivity(currentActivity, 0,
+				new Intent(currentActivity, currentActivity.getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+
+		// Setup an intent filter for all MIME based dispatches (TEXT);
+		IntentFilter ndefText = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
+		try {
+			ndefText.addDataType("*/*");
+		} catch (MalformedMimeTypeException e) {
+			Log.e("TWINSPRITE", "MALFORMED MIME TYPE!");
+			throw new RuntimeException("fail", e);
+		}
+
+		// Setup an intent filter for all MIME based dispatches (URI);
+		IntentFilter ndefURI = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
+		try {
+			ndefURI.addDataScheme("http");
+			;
+		} catch (Exception e) {
+			Log.e("TWINSPRITE", "URI SCHEME EXCEPTION!");
+			throw new RuntimeException("fail", e);
+		}
+
+		mFilters = new IntentFilter[] { ndefText, ndefURI };
+
+		// Setup a tech list for all NfcF tags
+		mTechLists = new String[][] { new String[] { NfcF.class.getName() } };
 	}
 
 	@Override
@@ -132,6 +249,14 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 		case INTENTREQUEST_CONVERSATION:
 			controllers.mapController.applyCurrentMapReplacements(getResources(), true);
 			break;
+		case INTENTREQUEST_TWINSPRITE:
+			if (resultCode != Activity.RESULT_OK)
+				break;
+			final int action = data.getIntExtra("action", -1);
+			if (TwinspriteActivity.INTENTREQUEST_SCAN == action) {
+				this.updateNewPlayer();
+			}
+			break;
 		case INTENTREQUEST_SAVEGAME:
 			if (resultCode != Activity.RESULT_OK)
 				break;
@@ -144,6 +269,14 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 			}
 			break;
 		}
+	}
+	
+	private void updateNewPlayer(){
+		this.controllers.actorStatsController.recalculatePlayerStats(world.model.player);
+		this.statusview.updateIcon(world.model.player.canLevelup());
+		this.world.model.player.nextPosition.x = this.world.model.player.position.x;
+		this.world.model.player.nextPosition.y = this.world.model.player.position.y;
+		controllers.movementController.moveToNextIfPossible();
 	}
 
 	private boolean save(int slot) {
@@ -177,6 +310,10 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 		controllers.movementController.stopMovement();
 
 		save(Savegames.SLOT_QUICKSAVE);
+
+		if (mAdapter != null) {
+			mAdapter.disableForegroundDispatch(currentActivity);
+		}
 	}
 
 	@Override
@@ -188,6 +325,10 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 		controllers.gameRoundController.resume();
 
 		updateStatus();
+
+		if (mAdapter != null) {
+			mAdapter.enableForegroundDispatch(currentActivity, mPendingIntent, mFilters, mTechLists);
+		}
 	}
 
 	private void unsubscribeFromModel() {
@@ -464,5 +605,171 @@ public final class MainActivity extends Activity implements PlayerMovementListen
 	@Override
 	public void onPlayerDoesNotHaveEnoughAP() {
 		message(getString(R.string.combat_not_enough_ap));
+	}
+
+	@Override
+	public void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+
+		Log.i("TWINSPRITE", "NEW INTENT");
+
+		String nfcText = "";
+
+		Parcelable[] ndefMessages = (Parcelable[]) (intent.getParcelableArrayExtra("android.nfc.extra.NDEF_MESSAGES"));
+		if (ndefMessages != null) {
+			Log.i("TWINSPRITE", "MESSAGES: " + ndefMessages.length);
+			try {
+				for (int i = 0; i < ndefMessages.length; i++) {
+					NdefMessage ndefMessage = (NdefMessage) (ndefMessages[i]);
+					NdefRecord[] ndefRecords = ndefMessage.getRecords();
+					Log.i("TWINSPRITE", "RECORDS: " + ndefRecords.length);
+
+					for (int j = 0; j < ndefRecords.length; j++) {
+						Log.i("TWINSPRITE", "TNF: " + ndefRecords[j].getTnf());
+						Log.i("TWINSPRITE", "TYPE: " + ndefRecords[j].getType());
+						if (ndefRecords[j].getTnf() == NdefRecord.TNF_WELL_KNOWN
+								&& Arrays.equals(ndefRecords[j].getType(), NdefRecord.RTD_TEXT)) {
+							Log.i("TWINSPRITE", "TIPO TEXTO");
+							/*
+							 * payload[0] contains the "Status Byte Encodings"
+							 * field, per the NFC Forum
+							 * "Text Record Type Definition" section 3.2.1.
+							 * 
+							 * bit7 is the Text Encoding Field.
+							 * 
+							 * if (Bit_7 == 0): The text is encoded in UTF-8 if
+							 * (Bit_7 == 1): The text is encoded in UTF16
+							 * 
+							 * Bit_6 is reserved for future use and must be set
+							 * to zero.
+							 * 
+							 * Bits 5 to 0 are the length of the IANA language
+							 * code.
+							 */
+							try {
+								byte[] payLoad = ndefRecords[0].getPayload();
+
+								// Get the Text Encoding
+								String textEncoding = ((payLoad[0] & 0200) == 0) ? "UTF-8" : "UTF-16";
+
+								// Get the Language Code
+								int languageCodeLength = payLoad[0] & 0077;
+								// String languageCode = new String(payLoad, 1,
+								// languageCodeLength, "US-ASCII");
+
+								// Get the Text
+								nfcText = new String(payLoad, languageCodeLength + 1, payLoad.length
+										- languageCodeLength - 1, textEncoding);
+
+							} catch (UnsupportedEncodingException e) {
+								e.printStackTrace();
+							}
+						} else if (ndefRecords[j].getTnf() == NdefRecord.TNF_WELL_KNOWN
+								&& Arrays.equals(ndefRecords[j].getType(), NdefRecord.RTD_URI)) {
+
+							Log.i("TWINSPRITE", "TIPO URI");
+							/*
+							 * See NFC forum specification for
+							 * "URI Record Type Definition" at 3.2.2
+							 * 
+							 * http://www.nfc-forum.org/specs/
+							 * 
+							 * payload[0] contains the URI Identifier Code
+							 * payload[1]...payload[payload.length - 1] contains
+							 * the rest of the URI.
+							 */
+							byte[] payload = ndefRecords[j].getPayload();
+							String prefix = (String) URI_PREFIX_MAP.get(payload[0]);
+							Log.i("TWINSPRITE", "URI PREFIX: " + prefix);
+							byte prefBytes[] = prefix.getBytes(Charset.forName("UTF-8"));
+							byte postBytes[] = Arrays.copyOfRange(payload, 1, payload.length);
+
+							byte[] fullUri = new byte[prefBytes.length + postBytes.length];
+							System.arraycopy(prefBytes, 0, fullUri, 0, prefBytes.length);
+							System.arraycopy(postBytes, 0, fullUri, prefBytes.length, postBytes.length);
+
+							nfcText = new String(fullUri, Charset.forName("UTF-8"));
+						}
+					}
+				}
+
+				Log.i("TWINSPRITE", "nfcText: " + nfcText);
+			} catch (Exception e) {
+				Log.e("TWINSPRITE", e.toString());
+			}
+		}
+
+		if (!nfcText.isEmpty()) {
+			this.loadToyx(nfcText);
+		}
+	}
+
+	private void loadToyx(String toyxid) {
+
+		if (toyxid.startsWith(TwinspriteActivity.TWINSPRITE_SCAN_BASE_URI)) {
+			toyxid = toyxid.replace(TwinspriteActivity.TWINSPRITE_SCAN_BASE_URI, "");
+		}
+
+		// show progress dialog
+		progress.setTitle("Loading");
+		progress.setMessage("Fetching toyx...");
+		progress.show();
+
+		app.setToyx(new Toyx(toyxid));
+
+		app.getToyx().createSessionInBackground(new CreateSessionCallback() {
+			@Override
+			public void onCreateSession(TwinspriteException e) {
+				progress.dismiss();
+				if (e == null) {
+					app.getToyx().fetchInBackground(new GetCallback() {
+						@Override
+						public void onFetch(Toyx toyx, TwinspriteException e) {
+							progress.dismiss();
+							if (e == null) {
+								app.setToyx(toyx);
+								ToyxManager.loadPlayer(app.getToyx(), world.model.player);
+								updateNewPlayer();
+							} else {
+								MainActivity.this.showDialog(
+										getResources().getString(R.string.twinsprite_fetch_failed),
+										e.getDetailMessage());
+							}
+						}
+					});
+				} else {
+					MainActivity.this.showDialog(getResources().getString(R.string.twinsprite_session_failed),
+							e.getDetailMessage());
+				}
+			}
+		});
+	}
+
+	public void showDialog(final String title, final String message) {
+
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+
+				AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+
+				// set title
+				alertDialogBuilder.setTitle(title);
+
+				// set dialog message
+				alertDialogBuilder.setMessage(message).setCancelable(false)
+						.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int id) {
+								// close dialog
+							}
+						});
+
+				// create alert dialog
+				AlertDialog alertDialog = alertDialogBuilder.create();
+
+				// show it
+				alertDialog.show();
+			}
+		});
 	}
 }

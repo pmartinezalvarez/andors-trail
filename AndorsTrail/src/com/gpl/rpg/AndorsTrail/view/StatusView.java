@@ -31,7 +31,7 @@ public final class StatusView extends RelativeLayout implements PlayerStatsListe
 	private final RangeBar expBar;
 	private final ImageButton heroImage;
 	private boolean showingLevelup;
-	private final Drawable levelupDrawable;
+	private Drawable levelupDrawable;
 
 	public StatusView(final Context context, AttributeSet attr) {
 		super(context, attr);
@@ -98,9 +98,14 @@ public final class StatusView extends RelativeLayout implements PlayerStatsListe
 		}
 	}
 
-	private void updateIcon(boolean canLevelUp) {
+	public void updateIcon(boolean canLevelUp) {
 		showingLevelup = canLevelUp;
 		if (canLevelUp) {
+			Resources res = getResources();
+			levelupDrawable = new LayerDrawable(new Drawable[] {
+					new BitmapDrawable(res, world.tileManager.preloadedTiles.getBitmap(player.iconID))
+					,new BitmapDrawable(res, world.tileManager.preloadedTiles.getBitmap(TileManager.iconID_moveselect))
+			});
 			heroImage.setImageDrawable(levelupDrawable);
 		} else {
 			world.tileManager.setImageViewTile(heroImage, player);

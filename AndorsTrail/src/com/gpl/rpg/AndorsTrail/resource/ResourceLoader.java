@@ -21,14 +21,21 @@ public final class ResourceLoader {
 
 	private static final int itemCategoriesResourceId = R.array.loadresource_itemcategories;
 	private static final int actorConditionsResourceId = R.array.loadresource_actorconditions;
-	private static final int itemsResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_items_debug : R.array.loadresource_items;
-	private static final int droplistsResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_droplists_debug : R.array.loadresource_droplists;
-	private static final int questsResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_quests_debug : R.array.loadresource_quests;
-	private static final int conversationsListsResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_conversationlists_debug : R.array.loadresource_conversationlists;
-	private static final int monstersResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_monsters_debug : R.array.loadresource_monsters;
-	private static final int mapsResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_maps_debug : R.array.loadresource_maps;
+	private static final int itemsResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_items_debug
+			: R.array.loadresource_items;
+	private static final int droplistsResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_droplists_debug
+			: R.array.loadresource_droplists;
+	private static final int questsResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_quests_debug
+			: R.array.loadresource_quests;
+	private static final int conversationsListsResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_conversationlists_debug
+			: R.array.loadresource_conversationlists;
+	private static final int monstersResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_monsters_debug
+			: R.array.loadresource_monsters;
+	private static final int mapsResourceId = AndorsTrailApplication.DEVELOPMENT_DEBUGRESOURCES ? R.array.loadresource_maps_debug
+			: R.array.loadresource_maps;
 
 	private static long taskStart;
+
 	private static void timingCheckpoint(String loaderName) {
 		long now = System.currentTimeMillis();
 		long duration = now - taskStart;
@@ -46,34 +53,36 @@ public final class ResourceLoader {
 
 		DynamicTileLoader loader = new DynamicTileLoader(world.tileManager.tileCache);
 		prepareTilesets(loader, mTileSize);
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("prepareTilesets");
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("prepareTilesets");
 
 		// ========================================================================
 		// Load various ui icons
-		/*TileManager.iconID_CHAR_HERO = */loader.prepareTileID(R.drawable.char_hero, 0);
-		/*TileManager.iconID_selection_red = */loader.prepareTileID(R.drawable.ui_selections, 0);
-		/*TileManager.iconID_selection_yellow = */loader.prepareTileID(R.drawable.ui_selections, 1);
-		/*TileManager.iconID_groundbag = */loader.prepareTileID(R.drawable.ui_icon_equipment, 0);
-		/*TileManager.iconID_boxopened = */loader.prepareTileID(R.drawable.ui_quickslots, 1);
-		/*TileManager.iconID_boxclosed = */loader.prepareTileID(R.drawable.ui_quickslots, 0);
-		/*TileManager.iconID_selection_blue = */loader.prepareTileID(R.drawable.ui_selections, 2);
-		/*TileManager.iconID_selection_purple = */loader.prepareTileID(R.drawable.ui_selections, 3);
-		/*TileManager.iconID_selection_green = */loader.prepareTileID(R.drawable.ui_selections, 4);
-		for(int i = 0; i < 5; ++i) {
+		/* TileManager.iconID_CHAR_HERO = */loader.prepareTileID(R.drawable.char_hero, 0);
+		/* TileManager.iconID_selection_red = */loader.prepareTileID(R.drawable.ui_selections, 0);
+		/* TileManager.iconID_selection_yellow = */loader.prepareTileID(R.drawable.ui_selections, 1);
+		/* TileManager.iconID_groundbag = */loader.prepareTileID(R.drawable.ui_icon_equipment, 0);
+		/* TileManager.iconID_boxopened = */loader.prepareTileID(R.drawable.ui_quickslots, 1);
+		/* TileManager.iconID_boxclosed = */loader.prepareTileID(R.drawable.ui_quickslots, 0);
+		/* TileManager.iconID_selection_blue = */loader.prepareTileID(R.drawable.ui_selections, 2);
+		/* TileManager.iconID_selection_purple = */loader.prepareTileID(R.drawable.ui_selections, 3);
+		/* TileManager.iconID_selection_green = */loader.prepareTileID(R.drawable.ui_selections, 4);
+		for (int i = 0; i < 5; ++i) {
 			loader.prepareTileID(R.drawable.ui_splatters1, i);
-			loader.prepareTileID(R.drawable.ui_splatters1, i+8);
+			loader.prepareTileID(R.drawable.ui_splatters1, i + 8);
 		}
-
 
 		// ========================================================================
 		// Load effects
 		world.visualEffectTypes.initialize(loader);
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("VisualEffectLoader");
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("VisualEffectLoader");
 
 		// ========================================================================
 		// Load skills
 		world.skills.initialize();
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("SkillLoader");
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("SkillLoader");
 
 		// ========================================================================
 		// Load item categories
@@ -83,34 +92,43 @@ public final class ResourceLoader {
 			world.itemCategories.initialize(itemCategoryParser, readStringFromRaw(r, categoriesToLoad, i));
 		}
 		categoriesToLoad.recycle();
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("ItemCategoryParser");
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("ItemCategoryParser");
 
 		// ========================================================================
 		// Load condition types
-		final ActorConditionsTypeParser actorConditionsTypeParser = new ActorConditionsTypeParser(loader, translationLoader);
+		final ActorConditionsTypeParser actorConditionsTypeParser = new ActorConditionsTypeParser(loader,
+				translationLoader);
 		final TypedArray conditionsToLoad = r.obtainTypedArray(actorConditionsResourceId);
 		for (int i = 0; i < conditionsToLoad.length(); ++i) {
 			world.actorConditionsTypes.initialize(actorConditionsTypeParser, readStringFromRaw(r, conditionsToLoad, i));
 		}
 		conditionsToLoad.recycle();
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("ActorConditionsTypeParser");
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("ActorConditionsTypeParser");
 
+		// ========================================================================
+		// Load custom hero icons
+		for (int i = 0; i < 88; ++i) {
+			loader.prepareTileID(R.drawable.monsters_tometik7, i);
+		}
+		
 		// ========================================================================
 		// Load preloaded tiles
 		loader.flush();
 		world.tileManager.loadPreloadedTiles(r);
 
-
 		// ========================================================================
 		// Load items
-		final ItemTypeParser itemTypeParser = new ItemTypeParser(loader, world.actorConditionsTypes, world.itemCategories, translationLoader);
+		final ItemTypeParser itemTypeParser = new ItemTypeParser(loader, world.actorConditionsTypes,
+				world.itemCategories, translationLoader);
 		final TypedArray itemsToLoad = r.obtainTypedArray(itemsResourceId);
 		for (int i = 0; i < itemsToLoad.length(); ++i) {
 			world.itemTypes.initialize(itemTypeParser, readStringFromRaw(r, itemsToLoad, i));
 		}
 		itemsToLoad.recycle();
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("ItemTypeParser");
-
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("ItemTypeParser");
 
 		// ========================================================================
 		// Load droplists
@@ -120,8 +138,8 @@ public final class ResourceLoader {
 			world.dropLists.initialize(dropListParser, readStringFromRaw(r, droplistsToLoad, i));
 		}
 		droplistsToLoad.recycle();
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("DropListParser");
-
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("DropListParser");
 
 		// ========================================================================
 		// Load quests
@@ -131,8 +149,8 @@ public final class ResourceLoader {
 			world.quests.initialize(questParser, readStringFromRaw(r, questsToLoad, i));
 		}
 		questsToLoad.recycle();
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("QuestParser");
-
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("QuestParser");
 
 		// ========================================================================
 		// Load conversations
@@ -140,23 +158,25 @@ public final class ResourceLoader {
 		final TypedArray conversationsListsToLoad = r.obtainTypedArray(conversationsListsResourceId);
 		for (int i = 0; i < conversationsListsToLoad.length(); ++i) {
 			ConversationCollection conversations = new ConversationCollection();
-			Collection<String> ids = conversations.initialize(conversationListParser, readStringFromRaw(r, conversationsListsToLoad, i));
+			Collection<String> ids = conversations.initialize(conversationListParser,
+					readStringFromRaw(r, conversationsListsToLoad, i));
 			world.conversationLoader.addIDs(conversationsListsToLoad.getResourceId(i, -1), ids);
 		}
 		conversationsListsToLoad.recycle();
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("ConversationListParser");
-
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("ConversationListParser");
 
 		// ========================================================================
 		// Load monsters
-		final MonsterTypeParser monsterTypeParser = new MonsterTypeParser(world.dropLists, world.actorConditionsTypes, loader, translationLoader);
+		final MonsterTypeParser monsterTypeParser = new MonsterTypeParser(world.dropLists, world.actorConditionsTypes,
+				loader, translationLoader);
 		final TypedArray monstersToLoad = r.obtainTypedArray(monstersResourceId);
 		for (int i = 0; i < monstersToLoad.length(); ++i) {
 			world.monsterTypes.initialize(monsterTypeParser, readStringFromRaw(r, monstersToLoad, i));
 		}
 		monstersToLoad.recycle();
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("MonsterTypeParser");
-
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("MonsterTypeParser");
 
 		// ========================================================================
 		// Load maps
@@ -168,29 +188,30 @@ public final class ResourceLoader {
 			mapReader.read(r, mapResourceId, mapName);
 		}
 		mapsToLoad.recycle();
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("TMXMapReader");
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("TMXMapReader");
 		world.maps.addAll(mapReader.transformMaps(world.monsterTypes, world.dropLists));
 		loader.prepareAllMapTiles();
 		mapReader = null;
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("mapReader.transformMaps");
-
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("mapReader.transformMaps");
 
 		// ========================================================================
 		// Load graphics resources (icons and tiles)
 		loader.flush();
 		loader = null;
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("DynamicTileLoader");
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("DynamicTileLoader");
 		// ========================================================================
-
 
 		// ========================================================================
 		// Load worldmap coordinates
 		WorldMapParser.read(r, R.xml.worldmap, world.maps);
-		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) timingCheckpoint("WorldMapParser");
+		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES)
+			timingCheckpoint("WorldMapParser");
 		// ========================================================================
 
 		translationLoader.close();
-
 
 		if (AndorsTrailApplication.DEVELOPMENT_DEBUGMESSAGES) {
 			long duration = System.currentTimeMillis() - start;
@@ -201,13 +222,15 @@ public final class ResourceLoader {
 	public static String readStringFromRaw(final Resources r, final TypedArray array, final int index) {
 		return readStringFromRaw(r, array.getResourceId(index, -1));
 	}
+
 	public static String readStringFromRaw(final Resources r, final int resourceID) {
 		InputStream is = r.openRawResource(resourceID);
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 		StringBuilder sb = new StringBuilder(1000);
 		String line;
 		try {
-			while((line = br.readLine()) != null) sb.append(line);
+			while ((line = br.readLine()) != null)
+				sb.append(line);
 			br.close();
 			is.close();
 			return sb.toString();
@@ -219,8 +242,8 @@ public final class ResourceLoader {
 
 	private static void prepareTilesets(DynamicTileLoader loader, int mTileSize) {
 		final Size dst_sz1x1 = new Size(mTileSize, mTileSize);
-		final Size dst_sz2x2 = new Size(mTileSize*2, mTileSize*2);
-		final Size dst_sz2x3 = new Size(mTileSize*2, mTileSize*3);
+		final Size dst_sz2x2 = new Size(mTileSize * 2, mTileSize * 2);
+		final Size dst_sz2x3 = new Size(mTileSize * 2, mTileSize * 3);
 		final Size defaultTileSize = dst_sz1x1;
 		final Size src_sz1x1 = new Size(1, 1);
 		final Size src_sz2x1 = new Size(2, 1);

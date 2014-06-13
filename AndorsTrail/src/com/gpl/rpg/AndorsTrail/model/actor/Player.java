@@ -29,6 +29,9 @@ import com.gpl.rpg.AndorsTrail.util.Size;
 public final class Player extends Actor {
 
 	public static final int DEFAULT_PLAYER_ATTACKCOST = 4;
+	
+	public String toyxid = "";
+	
 	public final Coord lastPosition;
 	public final Coord nextPosition;
 
@@ -325,6 +328,7 @@ public final class Player extends Actor {
 		if (fileversion <= 33)
 			LegacySavegameFormatReaderForPlayer.readCombatTraitsPreV034(src, fileversion);
 
+		this.toyxid = src.readUTF();
 		this.baseTraits.iconID = src.readInt();
 		if (fileversion <= 33) /* this.tileSize = */
 			new Size(src, fileversion);
@@ -413,6 +417,7 @@ public final class Player extends Actor {
 	}
 
 	public void writeToParcel(DataOutputStream dest) throws IOException {
+		dest.writeUTF(toyxid);
 		dest.writeInt(baseTraits.iconID);
 		dest.writeInt(baseTraits.maxAP);
 		dest.writeInt(baseTraits.maxHP);

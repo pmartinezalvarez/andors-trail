@@ -280,7 +280,7 @@ public final class Dialogs {
 		}
 		controllerContext.gameRoundController.pause();
 		Intent intent = new Intent(mainActivity, TwinspriteActivity.class);
-		mainActivity.startActivity(intent);
+		mainActivity.startActivityForResult(intent, MainActivity.INTENTREQUEST_TWINSPRITE);
 		return true;
 	}
 	

@@ -20,16 +20,22 @@ public final class TileCache {
 	private final HashMap<String, SparseIntArray> tileIDsPerTilesetAndLocalID = new HashMap<String, SparseIntArray>();
 	private final LruCache<Integer, Bitmap> cache = new LruCache<Integer, Bitmap>(1000);
 
-	public int getMaxTileID() { return resourceTiles.length-1; }
+	public int getMaxTileID() {
+		return resourceTiles.length - 1;
+	}
+
 	public void allocateMaxTileID(int maxTileID) {
-		if (maxTileID <= 0) return;
+		if (maxTileID <= 0)
+			return;
 
 		ResourceFileTile[] oldArray = resourceTiles;
-		resourceTiles = new ResourceFileTile[maxTileID+1];
+		resourceTiles = new ResourceFileTile[maxTileID + 1];
 		System.arraycopy(oldArray, 0, resourceTiles, 0, oldArray.length);
 	}
+
 	public void setTile(int tileID, ResourceFileTileset tileset, int localID) {
-		if (resourceTiles[tileID] == null) resourceTiles[tileID] = new ResourceFileTile(tileset, localID);
+		if (resourceTiles[tileID] == null)
+			resourceTiles[tileID] = new ResourceFileTile(tileset, localID);
 		SparseIntArray tileIDsPerLocalID = tileIDsPerTilesetAndLocalID.get(tileset.tilesetName);
 		if (tileIDsPerLocalID == null) {
 			tileIDsPerLocalID = new SparseIntArray();
@@ -37,6 +43,7 @@ public final class TileCache {
 		}
 		tileIDsPerLocalID.put(localID, tileID);
 	}
+
 	public int getTileID(String tileSetName, int localID) {
 		return tileIDsPerTilesetAndLocalID.get(tileSetName).get(localID);
 	}
@@ -44,7 +51,8 @@ public final class TileCache {
 	private static final class ResourceFileTile {
 		public final ResourceFileTileset tileset;
 		public final int localID;
-		//public WeakReference<Bitmap> bitmap;
+
+		// public WeakReference<Bitmap> bitmap;
 		public ResourceFileTile(ResourceFileTileset tileset, int localID) {
 			this.tileset = tileset;
 			this.localID = localID;
@@ -56,15 +64,19 @@ public final class TileCache {
 		Reference<? extends Bitmap> ref;
 		while ((ref = gcQueue.poll()) != null) {
 			Bitmap b = ref.get();
-			if (b != null) b.recycle();
+			if (b != null)
+				b.recycle();
 		}
 	}
 
-	public TileCollection loadTilesFor(Collection<Integer> iconIDs, Resources r) { return loadTilesFor(iconIDs, r, null); }
+	public TileCollection loadTilesFor(Collection<Integer> iconIDs, Resources r) {
+		return loadTilesFor(iconIDs, r, null);
+	}
+
 	public TileCollection loadTilesFor(Collection<Integer> iconIDs, Resources r, TileCollection result) {
 		int maxTileID = 0;
 		HashMap<ResourceFileTileset, SparseArray<ResourceFileTile>> tilesToLoadPerSourceFile = new HashMap<ResourceFileTileset, SparseArray<ResourceFileTile>>();
-		for(int tileID : iconIDs) {
+		for (int tileID : iconIDs) {
 			ResourceFileTile tile = resourceTiles[tileID];
 			SparseArray<ResourceFileTile> tiles = tilesToLoadPerSourceFile.get(tile.tileset);
 			if (tiles == null) {
@@ -76,8 +88,9 @@ public final class TileCache {
 		}
 
 		boolean hasLoadedTiles = false;
-		if (result == null) result = new TileCollection(maxTileID);
-		for(Entry<ResourceFileTileset, SparseArray<ResourceFileTile>> e : tilesToLoadPerSourceFile.entrySet()) {
+		if (result == null)
+			result = new TileCollection(maxTileID);
+		for (Entry<ResourceFileTileset, SparseArray<ResourceFileTile>> e : tilesToLoadPerSourceFile.entrySet()) {
 			TileCutter cutter = null;
 
 			SparseArray<ResourceFileTile> tilesToLoad = e.getValue();
@@ -89,7 +102,8 @@ public final class TileCache {
 
 				if (bitmap == null) {
 					if (cutter == null) {
-						if (!hasLoadedTiles) cleanQueue();
+						if (!hasLoadedTiles)
+							cleanQueue();
 						cutter = new TileCutter(e.getKey(), r);
 						hasLoadedTiles = true;
 					}
@@ -101,9 +115,11 @@ public final class TileCache {
 				result.setBitmap(tileID, bitmap);
 			}
 
-			if (cutter != null) cutter.recycle();
+			if (cutter != null)
+				cutter.recycle();
 		}
-		if (hasLoadedTiles) cleanQueue();
+		if (hasLoadedTiles)
+			cleanQueue();
 		return result;
 	}
 
@@ -111,7 +127,8 @@ public final class TileCache {
 		cleanQueue();
 		ResourceFileTile tile = resourceTiles[tileID];
 		Bitmap bitmap = cache.get(tileID);
-		if (bitmap != null) return bitmap;
+		if (bitmap != null)
+			return bitmap;
 
 		TileCutter cutter = new TileCutter(tile.tileset, r);
 		Bitmap result = cutter.createTile(tile.localID);

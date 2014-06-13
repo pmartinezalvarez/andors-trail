@@ -6,17 +6,15 @@ import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
-import android.widget.Toast;
 
 import com.gpl.rpg.AndorsTrail.AndorsTrailApplication;
 import com.gpl.rpg.AndorsTrail.R;
 import com.gpl.rpg.AndorsTrail.model.ModelContainer;
 import com.gpl.rpg.AndorsTrail.twinsprite.ToyxManager;
-import com.twinsprite.Twinsprite;
 import com.twinsprite.TwinspriteException;
 import com.twinsprite.callback.CreateSessionCallback;
 import com.twinsprite.callback.GetCallback;
@@ -26,8 +24,9 @@ import com.twinsprite.entity.Toyx;
 public final class TwinspriteActivity extends Activity {
 
 	public static final int INTENTREQUEST_SCAN = 2;
-	
-	private static final String TWINSPRITE_SCAN_BASE_URI = "https://scan.twinsprite.com/";
+	public static final int INTENTREQUEST_SAVE = 4;
+
+	public static final String TWINSPRITE_SCAN_BASE_URI = "https://scan.twinsprite.com/";
 
 	private AndorsTrailApplication app;
 
@@ -53,9 +52,7 @@ public final class TwinspriteActivity extends Activity {
 			intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
 			this.startActivityForResult(intent, INTENTREQUEST_SCAN);
 		} catch (ActivityNotFoundException e) {
-			Toast toast = Toast.makeText(this, "ZXing Scanner not found.", Toast.LENGTH_LONG);
-			toast.setGravity(Gravity.CENTER, 0, 0);
-			toast.show();
+			this.showDownloadDialog();
 		}
 	}
 
@@ -77,6 +74,9 @@ public final class TwinspriteActivity extends Activity {
 					progress.dismiss();
 					if (e == null) {
 						Log.d("Twinsprite", "Toyx " + app.getToyx().getToyxId() + " saved successfully");
+						Intent i = new Intent();
+						i.putExtra("action", INTENTREQUEST_SAVE);
+						setResult(Activity.RESULT_OK, i);
 						TwinspriteActivity.this.finish();
 					} else {
 						TwinspriteActivity.this.showDialog(getResources().getString(R.string.twinsprite_save_failed),
@@ -85,6 +85,61 @@ public final class TwinspriteActivity extends Activity {
 				}
 			});
 
+		} else if (!model.player.toyxid.equals("")) {
+			// show progress dialog
+			progress.setTitle("Loading");
+			progress.setMessage("Saving toyx...");
+			progress.show();
+
+			app.setToyx(new Toyx(model.player.toyxid));
+
+			app.getToyx().createSessionInBackground(new CreateSessionCallback() {
+				@Override
+				public void onCreateSession(TwinspriteException e) {
+					progress.dismiss();
+					if (e == null) {
+						app.getToyx().fetchInBackground(new GetCallback() {
+							@Override
+							public void onFetch(Toyx toyx, TwinspriteException e) {
+								progress.dismiss();
+								if (e == null) {
+									app.setToyx(toyx);
+
+									ToyxManager.savePlayer(app.getToyx(), model.player);
+
+									app.getToyx().saveInBackground(new SaveCallback() {
+
+										@Override
+										public void onSave(TwinspriteException e) {
+											progress.dismiss();
+											if (e == null) {
+												Log.d("Twinsprite", "Toyx " + app.getToyx().getToyxId()
+														+ " saved successfully");
+												Intent i = new Intent();
+												i.putExtra("action", INTENTREQUEST_SAVE);
+												setResult(Activity.RESULT_OK, i);
+												TwinspriteActivity.this.finish();
+											} else {
+												TwinspriteActivity.this.showDialog(
+														getResources().getString(R.string.twinsprite_save_failed),
+														e.getDetailMessage());
+											}
+										}
+									});
+
+								} else {
+									TwinspriteActivity.this.showDialog(
+											getResources().getString(R.string.twinsprite_fetch_failed),
+											e.getDetailMessage());
+								}
+							}
+						});
+					} else {
+						TwinspriteActivity.this.showDialog(
+								getResources().getString(R.string.twinsprite_session_failed), e.getDetailMessage());
+					}
+				}
+			});
 		} else {
 			TwinspriteActivity.this.showDialog(getResources().getString(R.string.twinsprite_save_failed),
 					getResources().getString(R.string.twinsprite_scan_before_save));
@@ -100,14 +155,10 @@ public final class TwinspriteActivity extends Activity {
 				break;
 
 			String toyxid = data.getStringExtra("SCAN_RESULT");
-			
-			if(toyxid.startsWith(TWINSPRITE_SCAN_BASE_URI)){
+
+			if (toyxid.startsWith(TWINSPRITE_SCAN_BASE_URI)) {
 				toyxid = toyxid.replace(TWINSPRITE_SCAN_BASE_URI, "");
 			}
-
-			// Initializes the Twinsprite SDK
-			Twinsprite.initialize(this, getResources().getString(R.string.twinsprite_api_key), getResources()
-					.getString(R.string.twinsprite_secret_key));
 
 			// show progress dialog
 			progress.setTitle("Loading");
@@ -128,6 +179,9 @@ public final class TwinspriteActivity extends Activity {
 								if (e == null) {
 									app.setToyx(toyx);
 									ToyxManager.loadPlayer(app.getToyx(), model.player);
+									Intent i = new Intent();
+									i.putExtra("action", INTENTREQUEST_SCAN);
+									setResult(Activity.RESULT_OK, i);
 									TwinspriteActivity.this.finish();
 								} else {
 									TwinspriteActivity.this.showDialog(
@@ -174,4 +228,28 @@ public final class TwinspriteActivity extends Activity {
 			}
 		});
 	}
+	
+	private AlertDialog showDownloadDialog() {
+	    AlertDialog.Builder downloadDialog = new AlertDialog.Builder(this);
+	    downloadDialog.setTitle("Install Barcode Scanner?");
+	    downloadDialog.setMessage("This application requires Barcode Scanner. Would you like to install it?");
+	    downloadDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+	      @Override
+	      public void onClick(DialogInterface dialogInterface, int i) {
+	        String packageName =  "com.google.zxing.client.android";
+	        Uri uri = Uri.parse("market://details?id=" + packageName);
+	        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+	        try {
+	            TwinspriteActivity.this.startActivity(intent);
+	        } catch (ActivityNotFoundException anfe) {
+	          // Hmm, market is not installed
+	          Log.w("Twinsprite", "Google Play is not installed; cannot install " + packageName);
+	        }
+	      }
+	    });
+	    downloadDialog.setNegativeButton("No", null);
+	    downloadDialog.setCancelable(true);
+	    return downloadDialog.show();
+	  }
+
 }

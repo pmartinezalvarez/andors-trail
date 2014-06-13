@@ -5,7 +5,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 import android.annotation.SuppressLint;
@@ -31,6 +30,8 @@ public final class ToyxManager {
 		Gson gson = new Gson();
 
 		try {
+			toyx.putInt("iconID", player.iconID);
+			toyx.putInt("baseTraits:iconID", player.baseTraits.iconID);
 			toyx.putInt("baseTraits:maxAP", player.baseTraits.maxAP);
 			toyx.putInt("baseTraits:maxHP", player.baseTraits.maxHP);
 			toyx.putInt("baseTraits:moveCost", player.baseTraits.moveCost);
@@ -67,9 +68,6 @@ public final class ToyxManager {
 			toyx.putInt("health:max", player.health.max);
 			toyx.putInt("health:current", player.health.current);
 
-			toyx.put("spawnMap", player.spawnMap);
-			toyx.put("spawnPlace", player.spawnPlace);
-
 			// Inventory
 			toyx.putInt("inventory:gold", player.inventory.gold);
 			toyx.putString("inventory:wear",
@@ -78,10 +76,6 @@ public final class ToyxManager {
 					Base64.encodeToString(gson.toJson(player.inventory.quickitem).getBytes(), Base64.DEFAULT));
 			toyx.putString("inventory:items",
 					Base64.encodeToString(gson.toJson(player.inventory.items).getBytes(), Base64.DEFAULT));
-
-			// Quest Progress
-			toyx.putString("questProgress",
-					Base64.encodeToString(gson.toJson(player.questProgress).getBytes(), Base64.DEFAULT));
 
 			// Alignments
 			toyx.putString("alignments",
@@ -111,7 +105,9 @@ public final class ToyxManager {
 		Gson gson = new Gson();
 
 		try {
-			// TODO iconID
+			player.toyxid = toyx.getToyxId();
+			player.iconID = toyx.getInt("iconID");
+			player.baseTraits.iconID = toyx.getInt("baseTraits:iconID");
 			player.baseTraits.maxAP = toyx.getInt("baseTraits:maxAP");
 			player.baseTraits.maxHP = toyx.getInt("baseTraits:maxHP");
 			player.baseTraits.moveCost = toyx.getInt("baseTraits:moveCost");
@@ -144,9 +140,6 @@ public final class ToyxManager {
 			player.ap.set(toyx.getInt("ap:max"), toyx.getInt("ap:current"));
 			player.health.set(toyx.getInt("health:max"), toyx.getInt("health:current"));
 
-			player.spawnMap = toyx.getString("spawnMap");
-			player.spawnPlace = toyx.getString("spawnPlace");
-
 			// Inventory
 			player.inventory.gold = toyx.getInt("inventory:gold");
 			player.inventory.wear = gson.fromJson(
@@ -161,14 +154,6 @@ public final class ToyxManager {
 			player.inventory.items.addAll((Collection<? extends ItemEntry>) gson.fromJson(
 					new String(Base64.decode(toyx.getString("inventory:items"), Base64.DEFAULT), "UTF-8"),
 					itemsCollectionType));
-
-			// Quest Progress
-			player.questProgress.clear();
-			Type questProgressCollectionType = new TypeToken<HashMap<String, HashSet<Integer>>>() {
-			}.getType();
-			player.questProgress.putAll((Map<? extends String, ? extends HashSet<Integer>>) gson.fromJson(new String(
-					Base64.decode(toyx.getString("questProgress"), Base64.DEFAULT), "UTF-8"),
-					questProgressCollectionType));
 
 			// Alignments
 			player.alignments.clear();

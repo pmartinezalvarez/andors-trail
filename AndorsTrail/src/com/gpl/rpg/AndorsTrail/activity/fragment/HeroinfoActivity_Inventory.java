@@ -42,6 +42,8 @@ public final class HeroinfoActivity_Inventory extends Fragment {
 	private TextView heroinfo_stats_gold;
 	private TextView heroinfo_stats_attack;
 	private TextView heroinfo_stats_defense;
+	
+	private ImageView heroinfo_hero_image;
 
 	private ItemType lastSelectedItem; // Workaround android bug #7139
 
@@ -79,6 +81,9 @@ public final class HeroinfoActivity_Inventory extends Fragment {
 		heroinfo_stats_gold = (TextView) v.findViewById(R.id.heroinfo_stats_gold);
 		heroinfo_stats_attack = (TextView) v.findViewById(R.id.heroinfo_stats_attack);
 		heroinfo_stats_defense = (TextView) v.findViewById(R.id.heroinfo_stats_defense);
+		
+		heroinfo_hero_image = (ImageView) v.findViewById(R.id.heroinfo_worn_center_image);
+		heroinfo_hero_image.setImageBitmap(world.tileManager.preloadedTiles.getBitmap(player.iconID));
 
 		setWearSlot(v, Inventory.WearSlot.weapon, R.id.heroinfo_worn_weapon, R.drawable.equip_weapon);
 		setWearSlot(v, Inventory.WearSlot.shield, R.id.heroinfo_worn_shield, R.drawable.equip_shield);
